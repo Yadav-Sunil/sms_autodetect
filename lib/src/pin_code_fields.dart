@@ -1,7 +1,7 @@
 part of sms_autodetect;
 
 /// Pin code text fields which automatically changes focus and validates
-class OtpCodeTextField extends StatefulWidget {
+class PinCodeTextField extends StatefulWidget {
   /// The [BuildContext] of the application
   final BuildContext appContext;
 
@@ -190,7 +190,7 @@ class OtpCodeTextField extends StatefulWidget {
   /// Makes the pin cells readOnly
   final bool readOnly;
 
-  OtpCodeTextField({
+  PinCodeTextField({
     Key? key,
     required this.appContext,
     required this.length,
@@ -254,10 +254,10 @@ class OtpCodeTextField extends StatefulWidget {
         super(key: key);
 
   @override
-  _OtpCodeTextFieldState createState() => _OtpCodeTextFieldState();
+  _PinCodeTextFieldState createState() => _PinCodeTextFieldState();
 }
 
-class _OtpCodeTextFieldState extends State<OtpCodeTextField>
+class _PinCodeTextFieldState extends State<PinCodeTextField>
     with TickerProviderStateMixin {
   TextEditingController? _textEditingController;
   FocusNode? _focusNode;

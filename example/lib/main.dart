@@ -87,7 +87,7 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
                 ),
               ),
               Spacer(),
-              OtpCodeTextField(
+              PinCodeTextField(
                 autoDisposeControllers: false,
                 appContext: context,
                 pastedTextStyle: TextStyle(
@@ -309,7 +309,7 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
             ),
           ),
           const Spacer(),
-          OtpCodeTextField(
+          PinCodeTextField(
             autoDisposeControllers: false,
             appContext: context,
             pastedTextStyle: TextStyle(
