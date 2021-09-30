@@ -65,7 +65,27 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              PhoneFieldHint(),
+              PhoneFieldHint(
+                autoFocus: true,
+                decoration: InputDecoration(
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(width: 2, color: Colors.grey),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(width: 2, color: Colors.grey),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  disabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(width: 2, color: Colors.grey),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  suffixIconConstraints: BoxConstraints(
+                    minWidth: 45,
+                    minHeight: 0,
+                  ),
+                ),
+              ),
               Spacer(),
               OtpCodeTextField(
                 autoDisposeControllers: false,

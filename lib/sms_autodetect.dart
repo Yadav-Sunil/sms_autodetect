@@ -1,6 +1,7 @@
 library sms_autodetect;
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
@@ -175,7 +176,7 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
   Widget build(BuildContext context) {
     final decoration = widget.decoration ??
         InputDecoration(
-          suffixIcon: Platform.other == "other"
+          suffixIcon: Platform.isAndroid
               ? IconButton(
                   icon: Icon(Icons.phonelink_setup),
                   onPressed: () async {

@@ -650,7 +650,7 @@ class _OtpCodeTextFieldState extends State<OtpCodeTextField>
     return showDialog(
       context: context,
       useRootNavigator: true,
-      builder: (context) => _dialogConfig.platform == Platform.iOS
+      builder: (context) => _dialogConfig.platform == Platforms.iOS
           ? CupertinoAlertDialog(
               title: Text(_dialogConfig.dialogTitle!),
               content: RichText(
@@ -905,7 +905,7 @@ class _OtpCodeTextFieldState extends State<OtpCodeTextField>
 
   List<Widget> _getActionButtons(String pastedText) {
     var resultList = <Widget>[];
-    if (_dialogConfig.platform == Platform.iOS) {
+    if (_dialogConfig.platform == Platforms.iOS) {
       resultList.addAll([
         CupertinoDialogAction(
           child: Text(_dialogConfig.negativeText!),
