@@ -1,6 +1,6 @@
 name: sms_autodetect
-description: A new Flutter project.
-version: 1.0.0
+description: Flutter plugin to provide SMS code autoDetect support. Package which will help you to generate pin code fields. Can be useful for OTP for example.
+version: 1.0.2
 homepage: https://github.com/Yadav-Sunil/sms_autodetect.git
 
 environment:
