@@ -57,7 +57,7 @@ class SmsAutoDetect {
   }
 }
 
-mixin CodeAutoFill {
+mixin SMSAutoFill {
   final SmsAutoDetect _autoFill = SmsAutoDetect();
   String? code;
   StreamSubscription? _subscription;

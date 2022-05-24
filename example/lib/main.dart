@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sms_autodetect/sms_autodetect.dart';
 
 void main() {
@@ -95,26 +94,25 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
                   fontWeight: FontWeight.bold,
                 ),
                 length: 6,
-                obscureText: false,
-                // obscuringCharacter: '*',
-                // obscuringWidget: FlutterLogo(
-                //   size: 24,
-                // ),
+                obscureText: true,
+                obscuringCharacter: '*',
+                // if you are using obscuringCharacter remove obscuringWidget
+                obscuringWidget: Icon(Icons.vpn_key_rounded),
                 blinkWhenObscuring: true,
                 animationType: AnimationType.fade,
                 validator: (v) {
-                  // if (v!.length < 3) {
-                  //   return "I'm from validator";
-                  // } else {
-                  //   return null;
-                  // }
+                  if (v!.length < 6) {
+                    return "Please enter valid OTP";
+                  } else {
+                    return null;
+                  }
                 },
                 pinTheme: PinTheme(
                   fieldOuterPadding: EdgeInsets.only(left: 8, right: 8),
                   shape: PinCodeFieldShape.box,
                   borderRadius: BorderRadius.circular(5),
                   fieldHeight: 50,
-                  fieldWidth: 40,
+                  fieldWidth: 45,
                   activeFillColor: Colors.white,
                   inactiveFillColor: Colors.white,
                   selectedColor: Colors.black54,
@@ -125,8 +123,7 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
                 cursorColor: Colors.black,
                 animationDuration: Duration(milliseconds: 300),
                 enableActiveFill: true,
-                // autoDismissKeyboard: false,
-                // errorAnimationController: errorController,
+                autoDismissKeyboard: false,
                 controller: textEditingController,
                 keyboardType: TextInputType.number,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -134,15 +131,15 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
                   BoxShadow(
                     offset: Offset(0, 1),
                     color: Colors.black12,
-                    blurRadius: 10,
+                    blurRadius: 5,
                   )
                 ],
                 onCompleted: (v) {
                   print("Completed");
                 },
-                // onTap: () {
-                //   print("Pressed");
-                // },
+                onTap: () {
+                  print("Pressed");
+                },
                 onChanged: (value) {
                   print(value);
                 },
@@ -318,14 +315,12 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
             ),
             length: 6,
             obscureText: false,
-            // obscuringCharacter: '*',
-            // obscuringWidget: FlutterLogo(
-            //   size: 24,
-            // ),
+            obscuringCharacter: '*',
+            // obscuringWidget: Icon(Icons.vpn_key_rounded),
             blinkWhenObscuring: true,
             animationType: AnimationType.fade,
             validator: (v) {
-              // if (v!.length < 3) {
+              // if (v!.length < 6) {
               //   return "I'm from validator";
               // } else {
               //   return null;
@@ -362,9 +357,9 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
             onCompleted: (v) {
               print("Completed");
             },
-            // onTap: () {
-            //   print("Pressed");
-            // },
+            onTap: () {
+              print("Pressed");
+            },
             onChanged: (value) {
               print(value);
               setState(() {

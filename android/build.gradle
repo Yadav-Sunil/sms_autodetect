@@ -22,7 +22,7 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
         minSdkVersion 19
@@ -30,8 +30,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-auth:19.2.0'
-    implementation 'com.google.android.gms:play-services-auth-api-phone:17.5.1'
-    implementation 'androidx.core:core:1.6.0'
+    implementation 'com.google.android.gms:play-services-auth:20.2.0'
+    implementation 'com.google.android.gms:play-services-auth-api-phone:18.0.1'
+    implementation 'androidx.core:core:1.7.0'
 }
 
