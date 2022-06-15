@@ -4,19 +4,22 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.android.gms.auth.api.phone.SmsRetriever;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.Status;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SmsBroadcastReceiver  extends BroadcastReceiver {
+public class SmsBroadcastReceiver extends BroadcastReceiver {
     WeakReference<SmsAutodetectPlugin> plugin;
-    SmsBroadcastReceiver(){}
+
+    SmsBroadcastReceiver() {
+    }
+
     SmsBroadcastReceiver(WeakReference<SmsAutodetectPlugin> plugin) {
         this.plugin = plugin;
     }
@@ -40,12 +43,16 @@ public class SmsBroadcastReceiver  extends BroadcastReceiver {
                         String message = (String) extras.get(SmsRetriever.EXTRA_SMS_MESSAGE);
                         Pattern pattern = Pattern.compile("\\d{4,6}");
                         if (message != null) {
+                            HashMap<String, String> map = new HashMap<>();
                             Matcher matcher = pattern.matcher(message);
-
                             if (matcher.find()) {
-                                plugin.get().setCode(matcher.group(0));
+                                map.put("code", matcher.group(0));
+                                map.put("msg", message);
+                                plugin.get().setCode(map);
                             } else {
-                                plugin.get().setCode(message);
+                                map.put("code","");
+                                map.put("msg", message);
+                                plugin.get().setCode(map);
                             }
                         }
                     }

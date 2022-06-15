@@ -1,6 +1,7 @@
 library sms_autodetect;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -22,7 +23,8 @@ class SmsAutoDetect {
   static SmsAutoDetect? _singleton;
   static const MethodChannel _channel = const MethodChannel('sms_autodetect');
 
-  final StreamController<String> _code = StreamController.broadcast();
+  final StreamController<Map<String, String>> _code =
+      StreamController.broadcast();
 
   factory SmsAutoDetect() => _singleton ??= SmsAutoDetect._();
 
@@ -32,11 +34,14 @@ class SmsAutoDetect {
 
   Future<void> _didReceive(MethodCall method) async {
     if (method.method == 'smscode') {
-      _code.add(method.arguments);
+      var arguments = method.arguments;
+      var encode = jsonEncode(arguments);
+      var decode = jsonDecode(encode);
+      _code.add({"code": decode["code"], "msg": decode["msg"]});
     }
   }
 
-  Stream<String> get code => _code.stream;
+  Stream<Map<String, String>> get code => _code.stream;
 
   Future<String?> get hint async {
     final String? hint = await _channel.invokeMethod('requestPhoneHint');
@@ -59,13 +64,14 @@ class SmsAutoDetect {
 
 mixin SMSAutoFill {
   final SmsAutoDetect _autoFill = SmsAutoDetect();
-  String? code;
   StreamSubscription? _subscription;
 
   void listenForCode() {
-    _subscription = _autoFill.code.listen((code) {
-      this.code = code;
-      codeUpdated();
+    _subscription = _autoFill.code.listen((data) {
+      print("$data");
+      var code = data["code"] ?? "";
+      var msg = data["msg"] ?? "";
+      codeUpdated(code, msg);
     });
     _autoFill.listenForCode;
   }
@@ -78,7 +84,7 @@ mixin SMSAutoFill {
     return _autoFill.unregisterListener();
   }
 
-  void codeUpdated();
+  void codeUpdated(String code, String msg);
 }
 
 class PhoneFieldHint extends StatelessWidget {

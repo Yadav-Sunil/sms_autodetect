@@ -28,7 +28,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with CodeAutoFill {
+class _HomePageState extends State<HomePage> with SMSAutoFill {
   final textEditingController = TextEditingController();
   String signature = "{{ app signature }}";
 
@@ -44,8 +44,8 @@ class _HomePageState extends State<HomePage> with CodeAutoFill {
   }
 
   @override
-  void codeUpdated() {
-    textEditingController.text = code!;
+  void codeUpdated(String code, String msg) {
+    textEditingController.text = code;
     setState(() {});
   }
 
@@ -204,9 +204,10 @@ class OtpCodeVerificationScreen extends StatefulWidget {
 }
 
 class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
-    with CodeAutoFill {
+    with SMSAutoFill {
   String? appSignature;
   String? otpCode;
+  String? message;
   TextEditingController textEditingController = TextEditingController();
 
   // ..text = "123456";
@@ -219,10 +220,12 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
   final formKey = GlobalKey<FormState>();
 
   @override
-  void codeUpdated() {
-    otpCode = code!;
+  void codeUpdated(String code, String msg) {
+    otpCode = code;
+    message = msg;
     textEditingController.text = otpCode!;
     print("OTP Received : $otpCode");
+    print("Message Received : $message");
     setState(() {});
   }
 
@@ -381,7 +384,12 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
                 if (otpCode == null) {
                   return Text("Listening for code...", style: textStyle);
                 }
-                return Text("Code Received: $otpCode", style: textStyle);
+                return Column(
+                  children: [
+                    Text("Code Received: $otpCode", style: textStyle),
+                    Text("Message Received: $message", style: textStyle),
+                  ],
+                );
               },
             ),
           ),
