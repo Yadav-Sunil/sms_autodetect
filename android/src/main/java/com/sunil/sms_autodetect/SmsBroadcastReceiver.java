@@ -17,9 +17,6 @@ import java.util.regex.Pattern;
 public class SmsBroadcastReceiver extends BroadcastReceiver {
     WeakReference<SmsAutodetectPlugin> plugin;
 
-    SmsBroadcastReceiver() {
-    }
-
     SmsBroadcastReceiver(WeakReference<SmsAutodetectPlugin> plugin) {
         this.plugin = plugin;
     }

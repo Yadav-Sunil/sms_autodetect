@@ -227,6 +227,7 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
     print("OTP Received : $otpCode");
     print("Message Received : $message");
     setState(() {});
+    listenForCode();
   }
 
   @override

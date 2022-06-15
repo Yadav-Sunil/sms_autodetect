@@ -68,7 +68,6 @@ mixin SMSAutoFill {
 
   void listenForCode() {
     _subscription = _autoFill.code.listen((data) {
-      print("$data");
       var code = data["code"] ?? "";
       var msg = data["msg"] ?? "";
       codeUpdated(code, msg);

@@ -9,7 +9,6 @@ import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.os.Build;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -43,7 +42,6 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
  * SmsAutodetectPlugin
  */
 public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, MethodCallHandler {
-    private static final String TAG = SmsAutodetectPlugin.class.getSimpleName();
     private static final int PHONE_HINT_REQUEST = 11012;
     private static final String channelName = "sms_autodetect";
 
@@ -79,8 +77,6 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
     }
 
     public void setCode(HashMap<String, String> map) {
-        Log.e(TAG, "setCode: " + map.get("code"));
-        Log.e(TAG, "setCode: " + map.get("msg"));
         channel.invokeMethod("smscode", map);
     }
 
