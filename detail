@@ -1,3 +1,16 @@
 flutter pub publish --dry-run
 
 flutter pub publish
+
+flutter pub uploader add Email
+flutter pub uploader remove Email
+
+flutter pub login
+flutter pub logout
+
+
+git init
+git add -A
+git commit -m 'Added my project'
+git remote add origin git@github.com:sammy/my-new-project.git
+git push -u -f origin main
