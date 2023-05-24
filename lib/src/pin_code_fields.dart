@@ -58,7 +58,7 @@ class PinCodeTextField extends StatefulWidget {
   final TextStyle? textStyle;
 
   /// the style of the pasted text, default is [fontWeight: FontWeight.bold] while
-  /// [TextStyle.color] is [ThemeData.accentColor]
+  /// [TextStyle.color] is [ThemeData.colorScheme.secondary]
   final TextStyle? pastedTextStyle;
 
   /// background color for the whole row of pin code fields.
@@ -156,7 +156,7 @@ class PinCodeTextField extends StatefulWidget {
   /// Whether to show cursor or not
   final bool showCursor;
 
-  /// The color of the cursor, default to Theme.of(context).accentColor
+  /// The color of the cursor, default to Theme.of(context).colorScheme.secondary
   final Color? cursorColor;
 
   /// width of the cursor, default to 2
@@ -591,7 +591,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
         widget.showCursor) {
       final cursorColor = widget.cursorColor ??
           Theme.of(widget.appContext).textSelectionTheme.cursorColor ??
-          Theme.of(context).accentColor;
+          Theme.of(context).colorScheme.secondary;
       final cursorHeight = widget.cursorHeight ?? _textStyle.fontSize! + 8;
 
       if ((_selectedIndex == index + 1 && index + 1 == widget.length)) {
@@ -644,7 +644,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
 
     final defaultPastedTextStyle = TextStyle(
       fontWeight: FontWeight.bold,
-      color: Theme.of(context).accentColor,
+      color: Theme.of(context).colorScheme.secondary,
     );
 
     return showDialog(
@@ -657,7 +657,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
                 text: TextSpan(
                   text: _dialogConfig.dialogContent,
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.button!.color,
+                    color: Theme.of(context).textTheme.labelLarge!.color,
                   ),
                   children: [
                     TextSpan(
@@ -667,7 +667,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
                     TextSpan(
                       text: "?",
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.button!.color,
+                        color: Theme.of(context).textTheme.labelLarge!.color,
                       ),
                     )
                   ],
@@ -684,7 +684,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
                 text: TextSpan(
                   text: _dialogConfig.dialogContent,
                   style: TextStyle(
-                      color: Theme.of(context).textTheme.button!.color),
+                      color: Theme.of(context).textTheme.labelLarge!.color),
                   children: [
                     TextSpan(
                       text: formattedPastedText,
@@ -693,7 +693,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
                     TextSpan(
                       text: " ?",
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.button!.color,
+                        color: Theme.of(context).textTheme.labelLarge!.color,
                       ),
                     )
                   ],

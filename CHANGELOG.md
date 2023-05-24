@@ -1,4 +1,7 @@
 
+## 1.0.9
+* Resolve accentColor issue.
+
 ## 1.0.8
 * Changing publisher.
 
