@@ -11,6 +11,7 @@ import android.os.Build;
 import android.telephony.TelephonyManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.credentials.Credential;
@@ -99,14 +100,17 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                 Task<Void> task = client.startSmsRetriever();
 
                 task.addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
                     @Override
                     public void onSuccess(Void aVoid) {
                         unregisterReceiver();// unregister existing receiver
                         broadcastReceiver = new SmsBroadcastReceiver(new WeakReference<>(SmsAutodetectPlugin.this));
                         IntentFilter intentFilter = new IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION);
-//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        activity.registerReceiver(broadcastReceiver, intentFilter);
-//                        }
+
+                        //For Android 14 added the flag
+                        activity.registerReceiver(broadcastReceiver, intentFilter, Context.RECEIVER_EXPORTED);
+
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {   }
 //                        activity.registerReceiver(broadcastReceiver, SmsRetriever.SEND_PERMISSION, intentFilter);
                         result.success(null);
                     }
