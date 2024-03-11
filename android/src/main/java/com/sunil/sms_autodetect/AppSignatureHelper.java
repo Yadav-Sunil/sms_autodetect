@@ -47,8 +47,6 @@ public class AppSignatureHelper extends ContextWrapper {
 
     /**
      * Get all the app signatures for the current package
-     *
-     * @return
      */
     @SuppressLint("PackageManagerGetSignatures")
     public ArrayList<String> getAppSignatures() {
@@ -57,15 +55,7 @@ public class AppSignatureHelper extends ContextWrapper {
         try {
             // Get all package signatures for the current package
             String packageName = getPackageName();
-            PackageManager packageManager = getPackageManager();
-            Signature[] signatures;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                signatures = packageManager.getPackageInfo(packageName,
-                        PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.getApkContentsSigners();
-            } else {
-                signatures = packageManager.getPackageInfo(packageName,
-                        PackageManager.GET_SIGNATURES).signatures;
-            }
+            Signature[] signatures = getSignatures(packageName);
 
             // For each signature create a compatible hash
             for (Signature signature : signatures) {
@@ -78,6 +68,19 @@ public class AppSignatureHelper extends ContextWrapper {
             Log.e(TAG, "Unable to find package to obtain hash.", e);
         }
         return appCodes;
+    }
+
+    private Signature[] getSignatures(String packageName) throws PackageManager.NameNotFoundException {
+        PackageManager packageManager = getPackageManager();
+        Signature[] signatures;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            signatures = packageManager.getPackageInfo(packageName,
+                    PackageManager.GET_SIGNING_CERTIFICATES).signingInfo.getApkContentsSigners();
+        } else {
+            signatures = packageManager.getPackageInfo(packageName,
+                    PackageManager.GET_SIGNATURES).signatures;
+        }
+        return signatures;
     }
 
     private static String hash(String packageName, String signature) {
@@ -96,8 +99,6 @@ public class AppSignatureHelper extends ContextWrapper {
             // encode into Base64
             String base64Hash = Base64.encodeToString(hashSignature, Base64.NO_PADDING | Base64.NO_WRAP);
             base64Hash = base64Hash.substring(0, NUM_BASE64_CHAR);
-
-            Log.d(TAG, String.format("pkg: %s -- hash: %s", packageName, base64Hash));
             return base64Hash;
         } catch (NoSuchAlgorithmException e) {
             Log.e(TAG, "hash:NoSuchAlgorithm", e);

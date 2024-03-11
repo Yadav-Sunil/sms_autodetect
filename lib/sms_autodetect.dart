@@ -23,8 +23,7 @@ class SmsAutoDetect {
   static SmsAutoDetect? _singleton;
   static const MethodChannel _channel = const MethodChannel('sms_autodetect');
 
-  final StreamController<Map<String, String>> _code =
-      StreamController.broadcast();
+  final StreamController<Map<String, String>> _code = StreamController.broadcast();
 
   factory SmsAutoDetect() => _singleton ??= SmsAutoDetect._();
 
@@ -158,14 +157,9 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
 
   @override
   void initState() {
-    _controller = widget.controller ??
-        widget.child?.controller ??
-        _createInternalController();
-    _inputFormatters =
-        widget.inputFormatters ?? widget.child?.inputFormatters ?? [];
-    _focusNode = widget.focusNode ??
-        widget.child?.focusNode ??
-        _createInternalFocusNode();
+    _controller = widget.controller ?? widget.child?.controller ?? _createInternalController();
+    _inputFormatters = widget.inputFormatters ?? widget.child?.inputFormatters ?? [];
+    _focusNode = widget.focusNode ?? widget.child?.focusNode ?? _createInternalFocusNode();
     _focusNode.addListener(() async {
       if (_focusNode.hasFocus && !_hintShown) {
         _hintShown = true;
@@ -193,8 +187,7 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
               : null,
         );
 
-    return widget.child ??
-        _createField(widget.isFormWidget, decoration, widget.validator);
+    return widget.child ?? _createField(widget.isFormWidget, decoration, widget.validator);
   }
 
   @override
@@ -209,11 +202,8 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
     super.dispose();
   }
 
-  Widget _createField(bool isFormWidget, InputDecoration decoration,
-      FormFieldValidator? validator) {
-    return isFormWidget
-        ? _createTextFormField(decoration, validator)
-        : _createTextField(decoration);
+  Widget _createField(bool isFormWidget, InputDecoration decoration, FormFieldValidator? validator) {
+    return isFormWidget ? _createTextFormField(decoration, validator) : _createTextField(decoration);
   }
 
   Widget _createTextField(InputDecoration decoration) {
@@ -228,8 +218,7 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
     );
   }
 
-  Widget _createTextFormField(
-      InputDecoration decoration, FormFieldValidator? validator) {
+  Widget _createTextFormField(InputDecoration decoration, FormFieldValidator? validator) {
     return TextFormField(
       validator: validator,
       autofocus: widget.autoFocus,

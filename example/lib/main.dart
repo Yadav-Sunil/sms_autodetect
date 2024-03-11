@@ -14,9 +14,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        backgroundColor: Colors.white,
         scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
+          background: Colors.white,
+        ),
       ),
       home: HomePage(), // a random number, please don't call xD
     );
@@ -185,7 +186,7 @@ class _HomePageState extends State<HomePage> with SMSAutoFill {
                     ),
                   );
                 },
-                child: Text("Test CodeAutoFill mixin"),
+                child: Text("Test SmsAutoFill mixin"),
               )
             ],
           ),
@@ -199,12 +200,10 @@ class OtpCodeVerificationScreen extends StatefulWidget {
   const OtpCodeVerificationScreen({Key? key}) : super(key: key);
 
   @override
-  _OtpCodeVerificationScreenState createState() =>
-      _OtpCodeVerificationScreenState();
+  _OtpCodeVerificationScreenState createState() => _OtpCodeVerificationScreenState();
 }
 
-class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
-    with SMSAutoFill {
+class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen> with SMSAutoFill {
   String? appSignature;
   String? otpCode;
   String? message;
@@ -238,6 +237,7 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
     SmsAutoDetect().getAppSignature.then((signature) {
       setState(() {
         appSignature = signature;
+        debugPrint("---------------------\n App Signature $appSignature \n---------------------");
       });
     });
   }
@@ -324,6 +324,8 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
             blinkWhenObscuring: true,
             animationType: AnimationType.fade,
             validator: (v) {
+              return null;
+
               // if (v!.length < 6) {
               //   return "I'm from validator";
               // } else {
@@ -346,11 +348,11 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
             cursorColor: Colors.black,
             animationDuration: Duration(milliseconds: 300),
             enableActiveFill: true,
-            // autoDismissKeyboard: false,
             errorAnimationController: errorController,
             controller: textEditingController,
             keyboardType: TextInputType.number,
             mainAxisAlignment: MainAxisAlignment.center,
+            autoDismissKeyboard: true,
             boxShadows: [
               BoxShadow(
                 offset: Offset(0, 1),
