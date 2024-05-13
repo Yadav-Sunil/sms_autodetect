@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> with SMSAutoFill {
                   }
                 },
                 pinTheme: PinTheme(
-                  fieldOuterPadding: EdgeInsets.only(left: 8, right: 8),
+                  fieldOuterPadding: EdgeInsets.only(left: 5, right: 5),
                   shape: PinCodeFieldShape.box,
                   borderRadius: BorderRadius.circular(5),
                   fieldHeight: 50,
