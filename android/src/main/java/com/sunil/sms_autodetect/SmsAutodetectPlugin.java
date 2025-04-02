@@ -5,19 +5,17 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import androidx.activity.result.IntentSenderRequest;
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.credentials.Credential;
-import com.google.android.gms.auth.api.credentials.HintRequest;
+import com.google.android.gms.auth.api.identity.GetPhoneNumberHintIntentRequest;
+import com.google.android.gms.auth.api.identity.Identity;
 import com.google.android.gms.auth.api.phone.SmsRetriever;
 import com.google.android.gms.auth.api.phone.SmsRetrieverClient;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -50,23 +48,24 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
 
         @Override
         public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
-            if (requestCode == PHONE_HINT_REQUEST && pendingHintResult != null) {
-                if (resultCode == Activity.RESULT_OK && data != null) {
-                    Credential credential = data.getParcelableExtra(Credential.EXTRA_KEY);
-                    if (credential != null) {
-                        final String phoneNumber = credential.getId();
+            try {
+                if (requestCode == PHONE_HINT_REQUEST && pendingHintResult != null) {
+                    if (resultCode == Activity.RESULT_OK && data != null) {
+                        String phoneNumber =
+                                Identity.getSignInClient(activity).getPhoneNumberFromIntent(data);
                         pendingHintResult.success(phoneNumber);
                     } else {
                         pendingHintResult.success(null);
                     }
-                } else {
-                    pendingHintResult.success(null);
+                    return true;
                 }
-                return true;
+            } catch (Exception e) {
+                Log.e("Exception", e.toString());
             }
             return false;
         }
     };
+
 
     public SmsAutodetectPlugin() {
     }
@@ -83,6 +82,7 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                 requestHint();
                 break;
             case "listenForCode":
+                final String smsCodeRegexPattern = call.argument("smsCodeRegexPattern");
                 SmsRetrieverClient client = SmsRetriever.getClient(activity);
                 Task<Void> task = client.startSmsRetriever();
 
@@ -90,7 +90,8 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                     @Override
                     public void onSuccess(Void aVoid) {
                         unregisterReceiver();// unregister existing receiver
-                        broadcastReceiver = new SmsBroadcastReceiver(new WeakReference<>(SmsAutodetectPlugin.this));
+                        broadcastReceiver = new SmsBroadcastReceiver(new WeakReference<>(SmsAutodetectPlugin.this),
+                                smsCodeRegexPattern);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                             activity.registerReceiver(broadcastReceiver,
                                     new IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION), Context.RECEIVER_EXPORTED);
@@ -105,7 +106,7 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                 task.addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        result.error("ERROR_START_SMS_RETRIEVER", "Can't start sms retriever", null);
+                        result.error("ERROR_START_SMS_RETRIEVER", "Can't start sms retriever", e);
                     }
                 });
                 break;
@@ -125,34 +126,41 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
     }
 
     private void requestHint() {
+
         if (!isSimSupport()) {
             if (pendingHintResult != null) {
                 pendingHintResult.success(null);
             }
             return;
         }
-        HintRequest hintRequest = new HintRequest.Builder()
-                .setPhoneNumberIdentifierSupported(true)
-                .build();
 
-//        HintRequest hintRequest = new HintRequest.Builder()
-//                .setHintPickerConfig(new CredentialPickerConfig.Builder()
-//                        .setShowCancelButton(true)
-//                        .build())
-//                .setPhoneNumberIdentifierSupported(true)
-//                .build();
+        GetPhoneNumberHintIntentRequest request =
+                GetPhoneNumberHintIntentRequest.builder().build();
 
-        GoogleApiClient mCredentialsClient = new GoogleApiClient.Builder(activity)
-                .addApi(Auth.CREDENTIALS_API)
-                .build();
-        PendingIntent intent = Auth.CredentialsApi.getHintPickerIntent(
-                mCredentialsClient, hintRequest);
-        try {
-            activity.startIntentSenderForResult(intent.getIntentSender(),
-                    PHONE_HINT_REQUEST, null, 0, 0, 0);
-        } catch (IntentSender.SendIntentException e) {
-            Log.e("TAG", e.getMessage());
-        }
+        Identity.getSignInClient(activity)
+                .getPhoneNumberHintIntent(request)
+                .addOnSuccessListener(new OnSuccessListener<PendingIntent>() {
+                    @Override
+                    public void onSuccess(PendingIntent pendingIntent) {
+                        try {
+                            IntentSenderRequest intentSenderRequest = new IntentSenderRequest.Builder(pendingIntent).build();
+                            activity.startIntentSenderForResult(
+                                    intentSenderRequest.getIntentSender(),
+                                    PHONE_HINT_REQUEST, null, 0, 0, 0
+                            );
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            pendingHintResult.error("ERROR", e.getMessage(), e);
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(Exception e) {
+                        e.printStackTrace();
+                        pendingHintResult.error("ERROR", e.getMessage(), e);
+                    }
+                });
     }
 
     public boolean isSimSupport() {

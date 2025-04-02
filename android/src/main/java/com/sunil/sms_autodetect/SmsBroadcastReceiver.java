@@ -15,10 +15,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SmsBroadcastReceiver extends BroadcastReceiver {
-    WeakReference<SmsAutodetectPlugin> plugin;
+    final WeakReference<SmsAutodetectPlugin> plugin;
+    final String smsCodeRegexPattern;
 
-    SmsBroadcastReceiver(WeakReference<SmsAutodetectPlugin> plugin) {
+    SmsBroadcastReceiver(WeakReference<SmsAutodetectPlugin> plugin, String smsCodeRegexPattern) {
         this.plugin = plugin;
+        this.smsCodeRegexPattern = smsCodeRegexPattern;
     }
 
     @Override
@@ -38,19 +40,17 @@ public class SmsBroadcastReceiver extends BroadcastReceiver {
                     if (status.getStatusCode() == CommonStatusCodes.SUCCESS) {
                         // Get SMS message contents
                         String message = (String) extras.get(SmsRetriever.EXTRA_SMS_MESSAGE);
-                        Pattern pattern = Pattern.compile("\\d{4,6}");
+                        Pattern pattern = Pattern.compile(smsCodeRegexPattern);
                         if (message != null) {
                             HashMap<String, String> map = new HashMap<>();
                             Matcher matcher = pattern.matcher(message);
                             if (matcher.find()) {
                                 map.put("code", matcher.group(0));
-                                map.put("msg", message);
-                                plugin.get().setCode(map);
                             } else {
-                                map.put("code","");
-                                map.put("msg", message);
-                                plugin.get().setCode(map);
+                                map.put("code", "");
                             }
+                            map.put("msg", message);
+                            plugin.get().setCode(map);
                         }
                     }
                 }

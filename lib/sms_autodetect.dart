@@ -43,21 +43,35 @@ class SmsAutoDetect {
   Stream<Map<String, String>> get code => _code.stream;
 
   Future<String?> get hint async {
-    final String? hint = await _channel.invokeMethod('requestPhoneHint');
-    return hint;
+    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+        !kIsWeb) {
+      final String? hint = await _channel.invokeMethod('requestPhoneHint');
+      return hint;
+    }
+    return null;
   }
 
-  Future<void> get listenForCode async {
-    await _channel.invokeMethod('listenForCode');
+  Future<void> listenForCode({String smsCodeRegexPattern = '\\d{4,6}'}) async {
+    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+        !kIsWeb) {
+      await _channel
+          .invokeMethod('listenForCode', <String, String>{'smsCodeRegexPattern': smsCodeRegexPattern});
+    }
   }
 
   Future<void> unregisterListener() async {
-    await _channel.invokeMethod('unregisterListener');
+    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+        !kIsWeb) {
+      await _channel.invokeMethod('unregisterListener');
+    }
   }
 
   Future<String> get getAppSignature async {
-    final String? appSignature = await _channel.invokeMethod('getAppSignature');
-    return appSignature ?? '';
+    if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
+      final String? appSignature = await _channel.invokeMethod('getAppSignature');
+      return appSignature ?? '';
+    }
+    return '';
   }
 }
 

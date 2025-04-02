@@ -25,13 +25,13 @@ if (flutterVersionName == null) {
 
 android {
     namespace 'com.sunil.sms_autodetect_example'
-    compileSdk 34
+    compileSdk 35
     ndkVersion flutter.ndkVersion
 
     defaultConfig {
         applicationId "com.sunil.sms_autodetect_example"
-        minSdkVersion 19
-        targetSdkVersion 34
+        minSdkVersion flutter.minSdkVersion
+        targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }

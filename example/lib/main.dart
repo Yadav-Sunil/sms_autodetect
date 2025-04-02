@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
-          background: Colors.white,
+          surface: Colors.white,
         ),
       ),
       home: HomePage(), // a random number, please don't call xD
@@ -65,27 +65,7 @@ class _HomePageState extends State<HomePage> with SMSAutoFill {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              PhoneFieldHint(
-                autoFocus: true,
-                decoration: InputDecoration(
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(width: 2, color: Colors.grey),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(width: 2, color: Colors.grey),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  disabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(width: 2, color: Colors.grey),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  suffixIconConstraints: BoxConstraints(
-                    minWidth: 45,
-                    minHeight: 0,
-                  ),
-                ),
-              ),
+              PhoneFieldHint(),
               Spacer(),
               PinCodeTextField(
                 autoDisposeControllers: false,
