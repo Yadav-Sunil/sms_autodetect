@@ -435,9 +435,6 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
       case HapticFeedbackTypes.vibrate:
         HapticFeedback.vibrate();
         break;
-
-      default:
-        break;
     }
   }
 
