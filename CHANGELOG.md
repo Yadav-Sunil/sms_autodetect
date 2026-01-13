@@ -1,6 +1,9 @@
+## 1.1.1
+* Upgrade compileSdk, java version, minSdkVersion, classpath and dependencies.
+
 ## 1.1.0
 * Some issue resolved.
-* 
+
 ## 1.0.9
 * Resolve accentColor issue.
 

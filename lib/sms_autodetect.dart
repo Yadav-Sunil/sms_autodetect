@@ -23,7 +23,8 @@ class SmsAutoDetect {
   static SmsAutoDetect? _singleton;
   static const MethodChannel _channel = const MethodChannel('sms_autodetect');
 
-  final StreamController<Map<String, String>> _code = StreamController.broadcast();
+  final StreamController<Map<String, String>> _code =
+      StreamController.broadcast();
 
   factory SmsAutoDetect() => _singleton ??= SmsAutoDetect._();
 
@@ -33,17 +34,22 @@ class SmsAutoDetect {
 
   Future<void> _didReceive(MethodCall method) async {
     if (method.method == 'smscode') {
-      var arguments = method.arguments;
-      var encode = jsonEncode(arguments);
-      var decode = jsonDecode(encode);
-      _code.add({"code": decode["code"], "msg": decode["msg"]});
+      final arguments = method.arguments;
+      if (arguments is Map) {
+        _code.add({"code": arguments["code"], "msg": arguments["msg"]});
+      } else if (arguments is String) {
+        // Fallback if platform sends JSON string
+        final decode = jsonDecode(arguments);
+        _code.add({"code": decode["code"], "msg": decode["msg"]});
+      }
     }
   }
 
   Stream<Map<String, String>> get code => _code.stream;
 
   Future<String?> get hint async {
-    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+    if ((defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS) &&
         !kIsWeb) {
       final String? hint = await _channel.invokeMethod('requestPhoneHint');
       return hint;
@@ -52,15 +58,17 @@ class SmsAutoDetect {
   }
 
   Future<void> listenForCode({String smsCodeRegexPattern = '\\d{4,6}'}) async {
-    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+    if ((defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS) &&
         !kIsWeb) {
-      await _channel
-          .invokeMethod('listenForCode', <String, String>{'smsCodeRegexPattern': smsCodeRegexPattern});
+      await _channel.invokeMethod('listenForCode',
+          <String, String>{'smsCodeRegexPattern': smsCodeRegexPattern});
     }
   }
 
   Future<void> unregisterListener() async {
-    if ((defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) &&
+    if ((defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS) &&
         !kIsWeb) {
       await _channel.invokeMethod('unregisterListener');
     }
@@ -68,7 +76,8 @@ class SmsAutoDetect {
 
   Future<String> get getAppSignature async {
     if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
-      final String? appSignature = await _channel.invokeMethod('getAppSignature');
+      final String? appSignature =
+          await _channel.invokeMethod('getAppSignature');
       return appSignature ?? '';
     }
     return '';
@@ -171,9 +180,14 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
 
   @override
   void initState() {
-    _controller = widget.controller ?? widget.child?.controller ?? _createInternalController();
-    _inputFormatters = widget.inputFormatters ?? widget.child?.inputFormatters ?? [];
-    _focusNode = widget.focusNode ?? widget.child?.focusNode ?? _createInternalFocusNode();
+    _controller = widget.controller ??
+        widget.child?.controller ??
+        _createInternalController();
+    _inputFormatters =
+        widget.inputFormatters ?? widget.child?.inputFormatters ?? [];
+    _focusNode = widget.focusNode ??
+        widget.child?.focusNode ??
+        _createInternalFocusNode();
     _focusNode.addListener(() async {
       if (_focusNode.hasFocus && !_hintShown) {
         _hintShown = true;
@@ -187,12 +201,34 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
   }
 
   @override
+  void didUpdateWidget(_PhoneFieldHint oldWidget) {
+    if (widget.controller != oldWidget.controller) {
+      _controller = widget.controller ??
+          widget.child?.controller ??
+          _createInternalController();
+    }
+
+    if (widget.focusNode != oldWidget.focusNode) {
+      _focusNode = widget.focusNode ??
+          widget.child?.focusNode ??
+          _createInternalFocusNode();
+    }
+
+    if (widget.inputFormatters != oldWidget.inputFormatters) {
+      _inputFormatters =
+          widget.inputFormatters ?? widget.child?.inputFormatters ?? [];
+    }
+
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final decoration = widget.decoration ??
         InputDecoration(
           suffixIcon: Platform.isAndroid
               ? IconButton(
-                  icon: Icon(Icons.phonelink_setup),
+                  icon: const Icon(Icons.phonelink_setup),
                   onPressed: () async {
                     _hintShown = true;
                     await _askPhoneHint();
@@ -201,7 +237,8 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
               : null,
         );
 
-    return widget.child ?? _createField(widget.isFormWidget, decoration, widget.validator);
+    return widget.child ??
+        _createField(widget.isFormWidget, decoration, widget.validator);
   }
 
   @override
@@ -216,8 +253,11 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
     super.dispose();
   }
 
-  Widget _createField(bool isFormWidget, InputDecoration decoration, FormFieldValidator? validator) {
-    return isFormWidget ? _createTextFormField(decoration, validator) : _createTextField(decoration);
+  Widget _createField(bool isFormWidget, InputDecoration decoration,
+      FormFieldValidator? validator) {
+    return isFormWidget
+        ? _createTextFormField(decoration, validator)
+        : _createTextField(decoration);
   }
 
   Widget _createTextField(InputDecoration decoration) {
@@ -232,7 +272,8 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
     );
   }
 
-  Widget _createTextFormField(InputDecoration decoration, FormFieldValidator? validator) {
+  Widget _createTextFormField(
+      InputDecoration decoration, FormFieldValidator? validator) {
     return TextFormField(
       validator: validator,
       autofocus: widget.autoFocus,
