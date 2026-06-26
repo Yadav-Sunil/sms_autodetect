@@ -261,6 +261,8 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
     with TickerProviderStateMixin {
   TextEditingController? _textEditingController;
   FocusNode? _focusNode;
+  bool _isUsingInternalController = false;
+  bool _isUsingInternalFocusNode = false;
   late List<String> _inputList;
   int _selectedIndex = 0;
   BorderRadius? borderRadius;
@@ -319,7 +321,7 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
         _pinTheme.shape != PinCodeFieldShape.underline) {
       borderRadius = _pinTheme.borderRadius;
     }
-    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode = widget.focusNode ?? _createInternalFocusNode();
     _focusNode!.addListener(
         _focusNodeListener); // Rebuilds on every change to reflect the correct color on each field.
     _inputList = List<String>.filled(widget.length, "");
@@ -374,14 +376,30 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
   @override
   void didUpdateWidget(PinCodeTextField oldWidget) {
     if (widget.controller != oldWidget.controller) {
-      oldWidget.controller?.removeListener(_textEditingControllerListener);
+      final oldController = _textEditingController;
+      final wasUsingInternalController = _isUsingInternalController;
+      oldController?.removeListener(_textEditingControllerListener);
       _assignController();
+      if (wasUsingInternalController &&
+          oldController != _textEditingController) {
+        oldController?.dispose();
+      }
     }
 
     if (widget.focusNode != oldWidget.focusNode) {
-      oldWidget.focusNode?.removeListener(_focusNodeListener);
-      _focusNode = widget.focusNode ?? FocusNode();
+      final oldFocusNode = _focusNode;
+      final wasUsingInternalFocusNode = _isUsingInternalFocusNode;
+      oldFocusNode?.removeListener(_focusNodeListener);
+      if (widget.focusNode == null) {
+        _focusNode = _createInternalFocusNode();
+      } else {
+        _isUsingInternalFocusNode = false;
+        _focusNode = widget.focusNode;
+      }
       _focusNode!.addListener(_focusNodeListener);
+      if (wasUsingInternalFocusNode && oldFocusNode != _focusNode) {
+        oldFocusNode?.dispose();
+      }
     }
 
     if (widget.length != oldWidget.length) {
@@ -441,12 +459,23 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
   // Assigning the text controller, if empty assiging a new one.
   void _assignController() {
     if (widget.controller == null) {
-      _textEditingController = TextEditingController();
+      _textEditingController = _createInternalController();
     } else {
+      _isUsingInternalController = false;
       _textEditingController = widget.controller;
     }
 
     _textEditingController?.addListener(_textEditingControllerListener);
+  }
+
+  TextEditingController _createInternalController() {
+    _isUsingInternalController = true;
+    return TextEditingController();
+  }
+
+  FocusNode _createInternalFocusNode() {
+    _isUsingInternalFocusNode = true;
+    return FocusNode();
   }
 
   void _textEditingControllerListener() {
@@ -513,6 +542,10 @@ class _PinCodeTextFieldState extends State<PinCodeTextField>
 
   @override
   void dispose() {
+    _blinkDebounce?.cancel();
+    _textEditingController?.removeListener(_textEditingControllerListener);
+    _focusNode?.removeListener(_focusNodeListener);
+
     if (widget.autoDisposeControllers) {
       _textEditingController!.dispose();
       _focusNode!.dispose();

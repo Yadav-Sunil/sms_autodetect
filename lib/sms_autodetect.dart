@@ -2,7 +2,6 @@ library sms_autodetect;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
@@ -33,24 +32,49 @@ class SmsAutoDetect {
   }
 
   Future<void> _didReceive(MethodCall method) async {
-    if (method.method == 'smscode') {
-      final arguments = method.arguments;
-      if (arguments is Map) {
-        _code.add({"code": arguments["code"], "msg": arguments["msg"]});
-      } else if (arguments is String) {
-        // Fallback if platform sends JSON string
-        final decode = jsonDecode(arguments);
-        _code.add({"code": decode["code"], "msg": decode["msg"]});
-      }
+    if (method.method != 'smscode') {
+      return;
+    }
+
+    final payload = _normalizeSmsPayload(method.arguments);
+    if (payload != null) {
+      _code.add(payload);
     }
   }
 
   Stream<Map<String, String>> get code => _code.stream;
 
+  static bool get _supportsSmsAutoDetect =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  static bool get _supportsAppSignature =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  static Map<String, String>? _normalizeSmsPayload(Object? arguments) {
+    Object? payload = arguments;
+
+    if (payload is String) {
+      try {
+        payload = jsonDecode(payload);
+      } on FormatException {
+        return null;
+      }
+    }
+
+    if (payload is! Map) {
+      return null;
+    }
+
+    return <String, String>{
+      'code': payload['code']?.toString() ?? '',
+      'msg': payload['msg']?.toString() ?? '',
+    };
+  }
+
   Future<String?> get hint async {
-    if ((defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS) &&
-        !kIsWeb) {
+    if (_supportsSmsAutoDetect) {
       final String? hint = await _channel.invokeMethod('requestPhoneHint');
       return hint;
     }
@@ -58,24 +82,20 @@ class SmsAutoDetect {
   }
 
   Future<void> listenForCode({String smsCodeRegexPattern = '\\d{4,6}'}) async {
-    if ((defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS) &&
-        !kIsWeb) {
+    if (_supportsSmsAutoDetect) {
       await _channel.invokeMethod('listenForCode',
           <String, String>{'smsCodeRegexPattern': smsCodeRegexPattern});
     }
   }
 
   Future<void> unregisterListener() async {
-    if ((defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS) &&
-        !kIsWeb) {
+    if (_supportsSmsAutoDetect) {
       await _channel.invokeMethod('unregisterListener');
     }
   }
 
   Future<String> get getAppSignature async {
-    if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
+    if (_supportsAppSignature) {
       final String? appSignature =
           await _channel.invokeMethod('getAppSignature');
       return appSignature ?? '';
@@ -88,17 +108,22 @@ mixin SMSAutoFill {
   final SmsAutoDetect _autoFill = SmsAutoDetect();
   StreamSubscription? _subscription;
 
-  void listenForCode() {
+  void listenForCode({String smsCodeRegexPattern = '\\d{4,6}'}) {
+    unawaited(_subscription?.cancel() ?? Future<void>.value());
     _subscription = _autoFill.code.listen((data) {
       var code = data["code"] ?? "";
       var msg = data["msg"] ?? "";
       codeUpdated(code, msg);
     });
-    _autoFill.listenForCode;
+    unawaited(
+      _autoFill.listenForCode(smsCodeRegexPattern: smsCodeRegexPattern),
+    );
   }
 
   Future<void> cancel() async {
-    return _subscription?.cancel();
+    final subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
   }
 
   Future<void> unregisterListener() {
@@ -178,6 +203,9 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
   bool _isUsingInternalController = false;
   bool _isUsingInternalFocusNode = false;
 
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   @override
   void initState() {
     _controller = widget.controller ??
@@ -188,31 +216,15 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
     _focusNode = widget.focusNode ??
         widget.child?.focusNode ??
         _createInternalFocusNode();
-    _focusNode.addListener(() async {
-      if (_focusNode.hasFocus && !_hintShown) {
-        _hintShown = true;
-        scheduleMicrotask(() {
-          _askPhoneHint();
-        });
-      }
-    });
+    _focusNode.addListener(_handleFocusChanged);
 
     super.initState();
   }
 
   @override
   void didUpdateWidget(_PhoneFieldHint oldWidget) {
-    if (widget.controller != oldWidget.controller) {
-      _controller = widget.controller ??
-          widget.child?.controller ??
-          _createInternalController();
-    }
-
-    if (widget.focusNode != oldWidget.focusNode) {
-      _focusNode = widget.focusNode ??
-          widget.child?.focusNode ??
-          _createInternalFocusNode();
-    }
+    _syncController();
+    _syncFocusNode();
 
     if (widget.inputFormatters != oldWidget.inputFormatters) {
       _inputFormatters =
@@ -226,7 +238,7 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
   Widget build(BuildContext context) {
     final decoration = widget.decoration ??
         InputDecoration(
-          suffixIcon: Platform.isAndroid
+          suffixIcon: _isAndroid
               ? IconButton(
                   icon: const Icon(Icons.phonelink_setup),
                   onPressed: () async {
@@ -243,6 +255,8 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
+
     if (_isUsingInternalController) {
       _controller.dispose();
     }
@@ -288,7 +302,69 @@ class _PhoneFieldHintState extends State<_PhoneFieldHint> {
 
   Future<void> _askPhoneHint() async {
     String? hint = await _autoFill.hint;
+    if (!mounted) {
+      return;
+    }
     _controller.value = TextEditingValue(text: hint ?? '');
+  }
+
+  void _handleFocusChanged() {
+    if (_focusNode.hasFocus && !_hintShown) {
+      _hintShown = true;
+      scheduleMicrotask(_askPhoneHint);
+    }
+  }
+
+  void _syncController() {
+    final oldController = _controller;
+    final wasUsingInternalController = _isUsingInternalController;
+    final providedController = widget.controller ?? widget.child?.controller;
+
+    if (providedController == null) {
+      if (wasUsingInternalController) {
+        return;
+      }
+      _controller = _createInternalController();
+    } else {
+      if (!wasUsingInternalController &&
+          identical(oldController, providedController)) {
+        return;
+      }
+      _isUsingInternalController = false;
+      _controller = providedController;
+    }
+
+    if (wasUsingInternalController) {
+      oldController.dispose();
+    }
+    _hintShown = false;
+  }
+
+  void _syncFocusNode() {
+    final oldFocusNode = _focusNode;
+    final wasUsingInternalFocusNode = _isUsingInternalFocusNode;
+    final providedFocusNode = widget.focusNode ?? widget.child?.focusNode;
+
+    if (providedFocusNode == null) {
+      if (wasUsingInternalFocusNode) {
+        return;
+      }
+      _focusNode = _createInternalFocusNode();
+    } else {
+      if (!wasUsingInternalFocusNode &&
+          identical(oldFocusNode, providedFocusNode)) {
+        return;
+      }
+      _isUsingInternalFocusNode = false;
+      _focusNode = providedFocusNode;
+    }
+
+    oldFocusNode.removeListener(_handleFocusChanged);
+    if (wasUsingInternalFocusNode) {
+      oldFocusNode.dispose();
+    }
+    _focusNode.addListener(_handleFocusChanged);
+    _hintShown = false;
   }
 
   TextEditingController _createInternalController() {

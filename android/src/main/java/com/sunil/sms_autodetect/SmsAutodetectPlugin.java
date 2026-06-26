@@ -39,8 +39,11 @@ import io.flutter.plugin.common.PluginRegistry;
 public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, MethodCallHandler {
     private static final int PHONE_HINT_REQUEST = 11012;
     private static final String channelName = "sms_autodetect";
+    private static final String ERROR_NO_ACTIVITY = "ERROR_NO_ACTIVITY";
 
     private Activity activity;
+    private Context applicationContext;
+    private ActivityPluginBinding activityBinding;
     private Result pendingHintResult;
     private MethodChannel channel;
     private SmsBroadcastReceiver broadcastReceiver;
@@ -48,21 +51,26 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
 
         @Override
         public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+            if (requestCode != PHONE_HINT_REQUEST || pendingHintResult == null) {
+                return false;
+            }
+
+            Result result = pendingHintResult;
+            pendingHintResult = null;
+
             try {
-                if (requestCode == PHONE_HINT_REQUEST && pendingHintResult != null) {
-                    if (resultCode == Activity.RESULT_OK && data != null) {
-                        String phoneNumber =
-                                Identity.getSignInClient(activity).getPhoneNumberFromIntent(data);
-                        pendingHintResult.success(phoneNumber);
-                    } else {
-                        pendingHintResult.success(null);
-                    }
-                    return true;
+                if (resultCode == Activity.RESULT_OK && data != null && activity != null) {
+                    String phoneNumber =
+                            Identity.getSignInClient(activity).getPhoneNumberFromIntent(data);
+                    result.success(phoneNumber);
+                } else {
+                    result.success(null);
                 }
             } catch (Exception e) {
-                Log.e("Exception", e.toString());
+                Log.e("SmsAutodetectPlugin", "Phone hint result failed", e);
+                result.error("ERROR_PHONE_HINT", e.getMessage(), e);
             }
-            return false;
+            return true;
         }
     };
 
@@ -71,17 +79,25 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
     }
 
     public void setCode(HashMap<String, String> map) {
-        channel.invokeMethod("smscode", map);
+        if (channel != null) {
+            channel.invokeMethod("smscode", map);
+        }
     }
 
     @Override
     public void onMethodCall(MethodCall call, @NonNull final Result result) {
         switch (call.method) {
             case "requestPhoneHint":
+                finishPendingHintSuccess(null);
                 pendingHintResult = result;
                 requestHint();
                 break;
             case "listenForCode":
+                if (activity == null) {
+                    result.error(ERROR_NO_ACTIVITY, "SmsAutodetectPlugin requires an attached Activity.", null);
+                    break;
+                }
+
                 final String smsCodeRegexPattern = call.argument("smsCodeRegexPattern");
                 SmsRetrieverClient client = SmsRetriever.getClient(activity);
                 Task<Void> task = client.startSmsRetriever();
@@ -89,6 +105,10 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                 task.addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
+                        if (activity == null) {
+                            result.error(ERROR_NO_ACTIVITY, "SmsAutodetectPlugin requires an attached Activity.", null);
+                            return;
+                        }
                         unregisterReceiver();// unregister existing receiver
                         broadcastReceiver = new SmsBroadcastReceiver(new WeakReference<>(SmsAutodetectPlugin.this),
                                 smsCodeRegexPattern);
@@ -115,7 +135,14 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                 result.success("successfully unregister receiver");
                 break;
             case "getAppSignature":
-                AppSignatureHelper signatureHelper = new AppSignatureHelper(activity.getApplicationContext());
+                Context context = applicationContext != null
+                        ? applicationContext
+                        : activity != null ? activity.getApplicationContext() : null;
+                if (context == null) {
+                    result.error(ERROR_NO_ACTIVITY, "SmsAutodetectPlugin requires an Android context.", null);
+                    break;
+                }
+                AppSignatureHelper signatureHelper = new AppSignatureHelper(context);
                 String appSignature = signatureHelper.getAppSignature();
                 result.success(appSignature);
                 break;
@@ -126,22 +153,29 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
     }
 
     private void requestHint() {
+        final Activity currentActivity = activity;
+        if (currentActivity == null) {
+            finishPendingHintSuccess(null);
+            return;
+        }
 
-        if (!isSimSupport()) {
-            if (pendingHintResult != null) {
-                pendingHintResult.success(null);
-            }
+        if (!isSimSupport(currentActivity)) {
+            finishPendingHintSuccess(null);
             return;
         }
 
         GetPhoneNumberHintIntentRequest request =
                 GetPhoneNumberHintIntentRequest.builder().build();
 
-        Identity.getSignInClient(activity)
+        Identity.getSignInClient(currentActivity)
                 .getPhoneNumberHintIntent(request)
                 .addOnSuccessListener(new OnSuccessListener<PendingIntent>() {
                     @Override
                     public void onSuccess(PendingIntent pendingIntent) {
+                        if (activity == null) {
+                            finishPendingHintSuccess(null);
+                            return;
+                        }
                         try {
                             IntentSenderRequest intentSenderRequest = new IntentSenderRequest.Builder(pendingIntent).build();
                             activity.startIntentSenderForResult(
@@ -149,23 +183,24 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
                                     PHONE_HINT_REQUEST, null, 0, 0, 0
                             );
                         } catch (Exception e) {
-                            e.printStackTrace();
-                            pendingHintResult.error("ERROR", e.getMessage(), e);
+                            Log.e("SmsAutodetectPlugin", "Failed to request phone hint", e);
+                            finishPendingHintError("ERROR_PHONE_HINT", e.getMessage(), e);
                         }
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(Exception e) {
-                        e.printStackTrace();
-                        pendingHintResult.error("ERROR", e.getMessage(), e);
+                        Log.e("SmsAutodetectPlugin", "Failed to create phone hint intent", e);
+                        finishPendingHintError("ERROR_PHONE_HINT", e.getMessage(), e);
                     }
                 });
     }
 
-    public boolean isSimSupport() {
+    public boolean isSimSupport(Activity activity) {
         TelephonyManager telephonyManager = (TelephonyManager) activity.getSystemService(Context.TELEPHONY_SERVICE);
-        return !(telephonyManager.getSimState() == TelephonyManager.SIM_STATE_ABSENT);
+        return telephonyManager != null
+                && telephonyManager.getSimState() != TelephonyManager.SIM_STATE_ABSENT;
     }
 
     private void setupChannel(BinaryMessenger messenger) {
@@ -176,11 +211,29 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
     private void unregisterReceiver() {
         if (broadcastReceiver != null) {
             try {
-                activity.unregisterReceiver(broadcastReceiver);
+                if (activity != null) {
+                    activity.unregisterReceiver(broadcastReceiver);
+                }
             } catch (Exception ex) {
-                // silent catch to avoir crash if receiver is not registered
+                Log.d("SmsAutodetectPlugin", "Receiver was already unregistered.", ex);
             }
             broadcastReceiver = null;
+        }
+    }
+
+    private void finishPendingHintSuccess(String value) {
+        Result result = pendingHintResult;
+        pendingHintResult = null;
+        if (result != null) {
+            result.success(value);
+        }
+    }
+
+    private void finishPendingHintError(String code, String message, Exception exception) {
+        Result result = pendingHintResult;
+        pendingHintResult = null;
+        if (result != null) {
+            result.error(code, message, exception);
         }
     }
 
@@ -190,34 +243,55 @@ public class SmsAutodetectPlugin implements FlutterPlugin, ActivityAware, Method
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        applicationContext = binding.getApplicationContext();
         setupChannel(binding.getBinaryMessenger());
     }
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         unregisterReceiver();
+        finishPendingHintSuccess(null);
+        if (channel != null) {
+            channel.setMethodCallHandler(null);
+            channel = null;
+        }
+        applicationContext = null;
     }
 
     @Override
     public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
-        activity = binding.getActivity();
-        binding.addActivityResultListener(activityResultListener);
+        attachToActivity(binding);
     }
 
     @Override
     public void onDetachedFromActivityForConfigChanges() {
-        unregisterReceiver();
+        detachFromActivity();
     }
 
     @Override
     public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
-        activity = binding.getActivity();
-        binding.addActivityResultListener(activityResultListener);
+        attachToActivity(binding);
     }
 
     @Override
     public void onDetachedFromActivity() {
+        detachFromActivity();
+    }
+
+    private void attachToActivity(@NonNull ActivityPluginBinding binding) {
+        activityBinding = binding;
+        activity = binding.getActivity();
+        binding.addActivityResultListener(activityResultListener);
+    }
+
+    private void detachFromActivity() {
         unregisterReceiver();
+        finishPendingHintSuccess(null);
+        if (activityBinding != null) {
+            activityBinding.removeActivityResultListener(activityResultListener);
+            activityBinding = null;
+        }
+        activity = null;
     }
 
 }

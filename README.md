@@ -12,7 +12,7 @@ Just before you sent your phone number to the backend, you need to let know the 
 
 To do that you need to do:
 ```dart
-await SmsAutoDetect().listenForCode;
+await SmsAutoDetect().listenForCode();
 ```
 This will listen for the SMS with the code when received, OTP autofill the PinCodeTextField widget.
 ```dart

@@ -15,7 +15,8 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
+        colorScheme:
+            ColorScheme.fromSwatch(primarySwatch: Colors.blue).copyWith(
           surface: Colors.white,
         ),
       ),
@@ -135,7 +136,7 @@ class _HomePageState extends State<HomePage> with SMSAutoFill {
               ElevatedButton(
                 child: Text('Listen for sms code'),
                 onPressed: () async {
-                  await SmsAutoDetect().listenForCode;
+                  await SmsAutoDetect().listenForCode();
                 },
               ),
               ElevatedButton(
@@ -180,10 +181,12 @@ class OtpCodeVerificationScreen extends StatefulWidget {
   const OtpCodeVerificationScreen({Key? key}) : super(key: key);
 
   @override
-  _OtpCodeVerificationScreenState createState() => _OtpCodeVerificationScreenState();
+  _OtpCodeVerificationScreenState createState() =>
+      _OtpCodeVerificationScreenState();
 }
 
-class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen> with SMSAutoFill {
+class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen>
+    with SMSAutoFill {
   String? appSignature;
   String? otpCode;
   String? message;
@@ -217,7 +220,8 @@ class _OtpCodeVerificationScreenState extends State<OtpCodeVerificationScreen> w
     SmsAutoDetect().getAppSignature.then((signature) {
       setState(() {
         appSignature = signature;
-        debugPrint("---------------------\n App Signature $appSignature \n---------------------");
+        debugPrint(
+            "---------------------\n App Signature $appSignature \n---------------------");
       });
     });
   }
