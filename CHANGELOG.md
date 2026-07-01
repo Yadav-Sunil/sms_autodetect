@@ -1,3 +1,7 @@
+## 1.1.3
+* Fix iOS plugin registration by exposing `SmsAutodetectPlugin` as a `FlutterPlugin` in the public header.
+* Align Swift Package Manager product naming with the `sms_autodetect` module.
+
 ## 1.1.2
 * Upgrade example Android Gradle wrapper to 8.14.3.
 * Upgrade example Kotlin Gradle Plugin version to 2.3.10.

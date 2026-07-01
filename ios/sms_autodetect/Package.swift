@@ -7,7 +7,7 @@ let package = Package(
         .iOS("12.0")
     ],
     products: [
-        .library(name: "sms-autodetect", targets: ["sms_autodetect"])
+        .library(name: "sms_autodetect", targets: ["sms_autodetect"])
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework")

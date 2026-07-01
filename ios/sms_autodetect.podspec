@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'sms_autodetect'
-  s.version          = '1.1.1'
+  s.version          = '1.1.3'
   s.summary          = 'Flutter plugin for SMS code autofill support.'
   s.description      = <<-DESC
 Flutter plugin to provide SMS code auto-detect support and PIN code fields.
